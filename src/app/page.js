@@ -173,10 +173,25 @@ export default function Home() {
     });
   };
 
+  // Two lines: MM-DD then HH:mm:ss
+  const formatDateLines = (ms) => {
+    if (!ms) return <div>-</div>;
+    const date = new Date(ms);
+    const pad = (n) => String(n).padStart(2, '0');
+    return (
+      <>
+        <div>{pad(date.getMonth() + 1)}-{pad(date.getDate())}</div>
+        <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+          {pad(date.getHours())}:{pad(date.getMinutes())}:{pad(date.getSeconds())}
+        </div>
+      </>
+    );
+  };
+
   const formatDuration = (ms) => {
     if (!ms || ms <= 0) return '-';
+    if (ms < 60000) return (ms / 1000).toFixed(1) + 's';
     const seconds = Math.floor(ms / 1000);
-    if (seconds < 60) return seconds + 's';
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return minutes + 'm ' + secs + 's';
@@ -621,13 +636,14 @@ export default function Home() {
                     <th>输出 Token</th>
                     <th>缓存读</th>
                     <th>缓存命中率</th>
-                    <th>用时</th>
+                    <th>首字耗时</th>
+                    <th>总耗时</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredLogs.length === 0 ? (
                     <tr>
-                      <td colSpan="9" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem 0' }}>
+                      <td colSpan="10" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem 0' }}>
                         没有找到符合条件的消息日志
                       </td>
                     </tr>
@@ -636,9 +652,9 @@ export default function Home() {
                       return (
                         <tr key={log.id} className="row-interactive">
                           <td style={{ whiteSpace: 'nowrap', fontSize: '0.8rem', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                            {formatDate(log.time_created)}
+                            {formatDateLines(log.time_created)}
                           </td>
-                            <td style={{ width: '400px', maxWidth: '400px', minWidth: '200px' }}>
+                            <td style={{ width: '260px', maxWidth: '260px', minWidth: '140px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                                 <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
                                   {log.title}
@@ -650,10 +666,10 @@ export default function Home() {
                               </div>
                             </td>
                             <td>
-                              <div className="badge badge-primary" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem' }}>
+                              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--text-primary)' }}>
                                 {log.model}
                               </div>
-                              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px', marginLeft: '4px' }}>
+                              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                                 {log.provider}
                               </div>
                             </td>
@@ -677,6 +693,9 @@ export default function Home() {
                                   {(log.cache_hit_rate * 100).toFixed(1)}%
                                 </span>
                               )}
+                            </td>
+                            <td style={{ color: 'var(--text-secondary)', fontWeight: 500, fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
+                              {formatDuration(log.ttfb)}
                             </td>
                             <td style={{ color: 'var(--text-secondary)', fontWeight: 500, fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
                               {formatDuration(log.duration)}

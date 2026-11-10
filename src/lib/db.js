@@ -66,7 +66,9 @@ db.exec(`
     agent TEXT,
     session_title TEXT,
     session_directory TEXT,
-    session_project_id TEXT
+    session_project_id TEXT,
+    time_streamed INTEGER,
+    time_completed INTEGER
   );
 
   CREATE TABLE IF NOT EXISTS sync_history (
@@ -77,6 +79,12 @@ db.exec(`
     error TEXT
   );
 `);
+
+// Existing installs predate the streaming columns
+const messageColumns = db.prepare('PRAGMA table_info(message)').all().map(c => c.name);
+if (!messageColumns.includes('time_streamed')) db.exec('ALTER TABLE message ADD COLUMN time_streamed INTEGER');
+if (!messageColumns.includes('time_completed')) db.exec('ALTER TABLE message ADD COLUMN time_completed INTEGER');
+
 
 export function getDb() {
   return db;
@@ -236,13 +244,15 @@ export function syncData() {
         tokens_input, tokens_output, tokens_reasoning,
         tokens_cache_read, tokens_cache_write,
         model_id, provider_id, agent,
-        session_title, session_directory, session_project_id
+        session_title, session_directory, session_project_id,
+        time_streamed, time_completed
       ) VALUES (
         @id, @session_id, @time_created, @role, @cost,
         @tokens_input, @tokens_output, @tokens_reasoning,
         @tokens_cache_read, @tokens_cache_write,
         @model_id, @provider_id, @agent,
-        @session_title, @session_directory, @session_project_id
+        @session_title, @session_directory, @session_project_id,
+        @time_streamed, @time_completed
       )
     `);
 
@@ -266,7 +276,9 @@ export function syncData() {
           agent: d.agent || '',
           session_title: row.session_title || '',
           session_directory: row.session_directory || '',
-          session_project_id: row.session_project_id || ''
+          session_project_id: row.session_project_id || '',
+          time_streamed: d.time?.streamed || null,
+          time_completed: d.time?.completed || null
         });
         count++;
       }
